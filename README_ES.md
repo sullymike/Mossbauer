@@ -28,6 +28,18 @@ Departamento de Química Física · UAM
 
 ---
 
+## Contenido
+
+- [Fitbauer y NORMOS](#fitbauer-y-normos) — por qué existe y cómo se ha validado contra el programa original
+- [Funciones principales](#funciones-principales)
+- [Capturas del programa](#capturas-del-programa)
+- [Arranque rápido](#arranque-rápido)
+- [Instalación](#instalación) — requisitos, script instalador, instalación manual, ejecución, actualización, problemas
+- [Historial de cambios](#historial-de-cambios)
+- [Licencia](#licencia)
+
+---
+
 ## Fitbauer y NORMOS
 
 NORMOS (R. A. Brand, 1990-1994) es el programa con el que se ha analizado buena
@@ -228,19 +240,140 @@ Cargar espectro → revisar folding/Vmax → elegir modelo → ajustar
 
 ## Instalación
 
-Consulta [`INSTALL.md`](INSTALL.md) para instrucciones completas.
+Fitbauer es una aplicación de Python: **no hay un `.exe` compilado**. Se ejecuta
+con Python, ya sea con el script instalador incluido (recomendado) o preparando el
+entorno a mano. La versión en una línea está en [Arranque rápido](#arranque-rápido);
+esta sección cubre todos los casos. La referencia independiente es
+[`INSTALL.md`](INSTALL.md).
+
+### 1. Requisitos
+
+| | |
+|---|---|
+| **Python** | 3.11 o posterior (CI usa 3.12). En Windows, marca **«Add Python to PATH»** durante la instalación. |
+| **pip** | Viene con Python; el instalador lo actualiza dentro del entorno virtual. |
+| **Sistema** | Windows 10/11, macOS 12+ o Linux (X11 o Wayland). |
+| **Internet** | Necesario una vez para descargar las dependencias, y para *Ayuda ▸ Buscar actualizaciones*. |
+| **Disco** | ~400 MB para el entorno virtual (sobre todo PySide6/Qt). |
+
+Dependencias de ejecución, instaladas automáticamente: `numpy >= 2.0`, `scipy`,
+`matplotlib`, `requests`, `PySide6 >= 6.5`.
+
+### 2. Obtener el código
+
+Clona el repositorio:
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
+git clone https://github.com/sullymike/Fitbauer.git
+cd Fitbauer
+```
+
+…o descarga un ZIP de release desde la
+[página de Releases](https://github.com/sullymike/Fitbauer/releases),
+descomprímelo y abre una terminal dentro de la carpeta resultante. **El ZIP de la
+release es el código fuente, no un binario**: aún tienes que ejecutar una de las
+instalaciones de abajo.
+
+### 3. Instalar — opción A: script instalador (recomendado)
+
+Desde la carpeta del proyecto:
+
+**Linux / macOS**
+
+```bash
+python3 install.py
+./fitbauer
+```
+
+**Windows**
+
+```bat
+py install.py
+fitbauer.bat
+```
+
+Si `py` no se reconoce, usa `python install.py`.
+
+`install.py` lo hace todo en un paso:
+
+- crea un entorno virtual local en `.venv/`;
+- instala las dependencias desde `requirements.txt`;
+- escribe los lanzadores `fitbauer` (Linux/macOS) y `fitbauer.bat` (Windows);
+- ejecuta una prueba rápida de compilación;
+- **registra Fitbauer en el menú de aplicaciones del sistema** (por-usuario, sin
+  permisos de administrador) para poder abrirlo desde el menú con su icono:
+  - Linux — `~/.local/share/applications/fitbauer.desktop` (categoría *Education*);
+  - Windows — una carpeta *Fitbauer* en el menú Inicio;
+  - macOS — el registro en menús se omite; arranca con `./fitbauer`.
+
+Opciones del instalador:
+
+```bash
+python install.py               # instalación completa + registro en menús
+python install.py --menu-only   # solo (re)registra la entrada de menú
+python install.py --no-menu     # instala sin tocar los menús
+python install.py --uninstall   # elimina la entrada de menú
+```
+
+### 4. Instalar — opción B: entorno virtual manual
+
+Si prefieres gestionar el entorno tú mismo:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate            # Windows: .venv\Scripts\activate
+pip install --upgrade pip
 pip install -r requirements.txt
 python fitbauer.py
 ```
 
-Construir ejecutable con PyInstaller:
+Para la batería de tests, instala además las dependencias de desarrollo:
 
 ```bash
-pyinstaller Fitbauer.spec    # → dist/Fitbauer/
+pip install -r requirements-dev.txt
+QT_QPA_PLATFORM=offscreen pytest -q   # añade "xvfb-run -a" en Linux sin pantalla
 ```
+
+### 5. Ejecutar
+
+- **Vía instalador:** `./fitbauer` (Linux/macOS) o `fitbauer.bat` (Windows), o la
+  entrada del menú de aplicaciones.
+- **Vía manual:** activa `.venv` y ejecuta `python fitbauer.py`.
+- **Ajuste sin interfaz (headless):** `python mossbauer_fit_cli.py` (discreto) o
+  `python fit_bhf_distribution_cli.py` (distribuciones).
+
+Primer arranque, con los datos de ejemplo incluidos:
+
+1. **Archivo ▸ Cargar…** → `data_sample/magnetita_Fe3O4.adt`
+2. **Archivo ▸ Cargar sesión…** → `data_sample/Fe3O4_session.json`
+
+### 6. Actualizar
+
+- **Desde el programa:** *Ayuda ▸ Buscar actualizaciones…* descarga el ZIP de la
+  última release. En los ajustes de actualización se puede elegir canal estable o
+  beta.
+- **Desde el código:** `git pull` y vuelve a ejecutar `python install.py` —
+  reutiliza `.venv` y actualiza las dependencias. Con un ZIP de release,
+  descomprime el nuevo sobre la carpeta y vuelve a ejecutar `python install.py`.
+
+### 7. Construir un ejecutable independiente (opcional)
+
+```bash
+pip install pyinstaller
+pyinstaller Fitbauer.spec        # → dist/Fitbauer/
+```
+
+La carpeta `dist/Fitbauer/` se ejecuta después sin ninguna instalación de Python.
+
+### 8. Problemas frecuentes
+
+| Síntoma | Solución |
+|---|---|
+| `python3: command not found` | Instala Python 3 desde [python.org](https://www.python.org/downloads/) o con el gestor de paquetes de tu distribución. |
+| La GUI no arranca | Comprueba que el venv está activo, luego `pip install -r requirements.txt` y `python -m py_compile fitbauer.py mossbauer_qt.py`. |
+| `ImportError` de PySide6, o error de *"platform plugin"* de Qt en Linux | Instala las bibliotecas de sistema que Qt necesita — en Debian/Ubuntu: `libgl1`, `libxkbcommon-x11-0`, `libegl1`. En una máquina sin pantalla usa `QT_QPA_PLATFORM=offscreen`. |
+| Falla la generación del PDF | El informe Markdown se guarda igualmente; la exportación a PDF necesita bibliotecas de render opcionales en algunos sistemas. |
+| No se crea la entrada de menú | Vuelve a ejecutar `python install.py --menu-only` (en macOS este paso se omite a propósito). |
 
 ---
 

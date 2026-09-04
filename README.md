@@ -28,6 +28,20 @@ Department of Physical Chemistry · UAM
 
 ---
 
+## Contents
+
+- [Fitbauer and NORMOS](#fitbauer-and-normos) — why it exists, and how it was validated against the original program
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Quick start](#quick-start)
+- [Fitting modes](#fitting-modes) — discrete, distribution and relaxation
+- [Installation](#installation) — requirements, installer script, manual setup, running, updating, troubleshooting
+- [Project structure](#project-structure)
+- [Changelog](#changelog)
+- [License](#license)
+
+---
+
 ## Fitbauer and NORMOS
 
 NORMOS (R. A. Brand, 1990-1994) is the program behind a large part of the
@@ -267,13 +281,137 @@ Use **L-curve α** to find a good compromise between residual and smoothness. Th
 
 ## Installation
 
-See [`INSTALL_EN.md`](INSTALL_EN.md) for full installation instructions.
+Fitbauer is a Python application — there is **no compiled `.exe`**. You run it with
+Python, either through the bundled installer script (recommended) or by setting up
+the environment by hand. The one-liner is in [Quick start](#quick-start); this
+section covers every case. The standalone reference is [`INSTALL_EN.md`](INSTALL_EN.md).
 
-Build a standalone executable with PyInstaller:
+### 1. Requirements
+
+| | |
+|---|---|
+| **Python** | 3.11 or newer (CI runs on 3.12). On Windows, tick **“Add Python to PATH”** in the installer. |
+| **pip** | Ships with Python; the installer upgrades it inside the virtual environment. |
+| **OS** | Windows 10/11, macOS 12+, or Linux (X11 or Wayland). |
+| **Internet** | Needed once to download the Python dependencies, and for *Help ▸ Check for updates*. |
+| **Disk** | ~400 MB for the virtual environment (mostly PySide6/Qt). |
+
+Runtime dependencies, installed automatically: `numpy >= 2.0`, `scipy`,
+`matplotlib`, `requests`, `PySide6 >= 6.5`.
+
+### 2. Get the code
+
+Clone the repository:
 
 ```bash
-pyinstaller Fitbauer.spec    # → dist/Fitbauer/
+git clone https://github.com/sullymike/Fitbauer.git
+cd Fitbauer
 ```
+
+…or download a release ZIP from the
+[Releases page](https://github.com/sullymike/Fitbauer/releases), unzip it, and open
+a terminal in the resulting folder. **The release ZIP is the source, not a
+binary** — you still run one of the installs below.
+
+### 3. Install — option A: installer script (recommended)
+
+From the project folder:
+
+**Linux / macOS**
+
+```bash
+python3 install.py
+./fitbauer
+```
+
+**Windows**
+
+```bat
+py install.py
+fitbauer.bat
+```
+
+If `py` is not recognised, use `python install.py`.
+
+`install.py` does everything in one step:
+
+- creates a local virtual environment in `.venv/`;
+- installs the dependencies from `requirements.txt`;
+- writes the launchers `fitbauer` (Linux/macOS) and `fitbauer.bat` (Windows);
+- runs a quick byte-compile smoke test;
+- **registers Fitbauer in the system application menu** (per-user, no admin
+  rights) so it opens from the menu with its icon:
+  - Linux — `~/.local/share/applications/fitbauer.desktop` (*Education* category);
+  - Windows — a *Fitbauer* folder in the Start Menu;
+  - macOS — menu registration is skipped; launch with `./fitbauer`.
+
+Installer flags:
+
+```bash
+python install.py               # full install + menu registration
+python install.py --menu-only   # only (re)register the menu entry
+python install.py --no-menu     # install, leave the menus untouched
+python install.py --uninstall   # remove the menu entry
+```
+
+### 4. Install — option B: manual virtual environment
+
+If you would rather manage the environment yourself:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate            # Windows: .venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+python fitbauer.py
+```
+
+For the test suite, also install the dev requirements:
+
+```bash
+pip install -r requirements-dev.txt
+QT_QPA_PLATFORM=offscreen pytest -q   # add "xvfb-run -a" on headless Linux
+```
+
+### 5. Run it
+
+- **Installer route:** `./fitbauer` (Linux/macOS) or `fitbauer.bat` (Windows), or
+  the application-menu entry.
+- **Manual route:** activate `.venv` and run `python fitbauer.py`.
+- **Headless fitting, no GUI:** `python mossbauer_fit_cli.py` (discrete) or
+  `python fit_bhf_distribution_cli.py` (distributions).
+
+First run, with the bundled sample data:
+
+1. **File ▸ Open…** → `data_sample/magnetita_Fe3O4.adt`
+2. **File ▸ Load session…** → `data_sample/Fe3O4_session.json`
+
+### 6. Update
+
+- **From inside the app:** *Help ▸ Check for updates…* downloads the latest release
+  ZIP. A stable/beta channel can be chosen in the update settings.
+- **From source:** `git pull`, then re-run `python install.py` — it reuses `.venv`
+  and refreshes the dependencies. With a release ZIP, unzip the new one over the
+  folder and re-run `python install.py`.
+
+### 7. Build a standalone executable (optional)
+
+```bash
+pip install pyinstaller
+pyinstaller Fitbauer.spec        # → dist/Fitbauer/
+```
+
+The folder `dist/Fitbauer/` then runs without any Python installation.
+
+### 8. Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `python3: command not found` | Install Python 3 from [python.org](https://www.python.org/downloads/) or your distro's package manager. |
+| GUI does not start | Check the venv is active, then `pip install -r requirements.txt` and `python -m py_compile fitbauer.py mossbauer_qt.py`. |
+| `ImportError` for PySide6, or a Qt *"platform plugin"* error on Linux | Install the system libraries Qt needs — on Debian/Ubuntu: `libgl1`, `libxkbcommon-x11-0`, `libegl1`. On a headless machine set `QT_QPA_PLATFORM=offscreen`. |
+| PDF report fails | The Markdown report is still written; PDF export needs optional rendering libraries on some systems. |
+| Menu entry not created | Re-run `python install.py --menu-only` (on macOS this step is intentionally skipped). |
 
 ---
 
